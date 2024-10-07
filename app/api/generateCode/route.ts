@@ -2,6 +2,8 @@ import shadcnDocs from "@/utils/shadcn-docs";
 import dedent from "dedent";
 import Together from "together-ai";
 import { z } from "zod";
+import { getSystemPrompt as defaultPropmot } from "@/lib/prompts";
+import { allowedHTMLElements } from '@/utils/markdown';
 
 let options: ConstructorParameters<typeof Together>[0] = {};
 if (process.env.HELICONE_API_KEY) {
@@ -33,7 +35,8 @@ export async function POST(req: Request) {
   }
 
   let { model, messages, shadcn } = result.data;
-  let systemPrompt = getSystemPrompt(shadcn);
+   let systemPrompt = defaultPropmot('');
+  // let systemPrompt = getSystemPrompt(shadcn);
 
   let res = await together.chat.completions.create({
     model,
@@ -93,7 +96,15 @@ function getSystemPrompt(shadcn: boolean) {
     - Use Tailwind margin and padding classes to style the components and ensure the components are spaced out nicely
     - Please ONLY return the full React code starting with the imports, nothing else. It's very important for my job that you only return the React code with imports. DO NOT START WITH \`\`\`typescript or \`\`\`javascript or \`\`\`tsx or \`\`\`.
     - ONLY IF the user asks for a dashboard, graph or chart, the recharts library is available to be imported, e.g. \`import { LineChart, XAxis, ... } from "recharts"\` & \`<LineChart ...><XAxis dataKey="name"> ...\`. Please only use this when needed.
-  `;
+  
+    <code_formatting_info>
+    Use 2 spaces for code indentation
+  </code_formatting_info>
+  
+  <message_formatting_info>
+    You can make the output pretty by using only the following available HTML elements: ${allowedHTMLElements.map((tagName) => `<${tagName}>`).join(', ')}
+  </message_formatting_info>
+    `;
 
   // Removed because it causes too many errors
   // - The lucide-react@0.263.1 library is also available to be imported. If you need an icon, use one from lucide-react. Here's an example of importing and using one: import { Camera } from "lucide-react"\` & \`<Camera color="red" size={48} />\`

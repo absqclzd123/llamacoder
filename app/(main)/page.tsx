@@ -1,8 +1,6 @@
 "use client";
 
 import CodeViewer from "@/components/code-viewer";
-import Footer from "@/components/Footer";
-import Header from "@/components/Header";
 import { useScrollTo } from "@/hooks/use-scroll-to";
 import { domain } from "@/utils/domain";
 import { CheckIcon } from "@heroicons/react/16/solid";
@@ -16,6 +14,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { toast, Toaster } from "sonner";
 import LoadingDots from "../../components/loading-dots";
 import { shareApp } from "./actions";
+import {StreamingMessageParser,extractBoltActionsRegex} from '@/lib/parse'
 
 export default function Home() {
   let [status, setStatus] = useState<
@@ -52,6 +51,7 @@ export default function Home() {
 
   let loading = status === "creating" || status === "updating";
 
+
   async function createApp(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -85,10 +85,14 @@ export default function Home() {
     for await (let chunk of readStream(res.body)) {
       setGeneratedCode((prev) => prev + chunk);
     }
+   
 
     setMessages([{ role: "user", content: prompt }]);
     setInitialAppConfig({ model, shadcn });
     setStatus("created");
+    const files =extractBoltActionsRegex(generatedCode)
+    console.log('genne....',generatedCode)
+    console.log('files....',JSON.stringify(files))
   }
 
   async function updateApp(e: FormEvent<HTMLFormElement>) {
@@ -139,7 +143,7 @@ export default function Home() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-7xl flex-col items-center justify-center py-2">
-      <Header />
+   
 
       <main className="mt-12 flex w-full flex-1 flex-col items-center px-4 text-center sm:mt-20">
         <a
@@ -186,62 +190,6 @@ export default function Home() {
               </div>
             </div>
             <div className="mt-6 flex flex-col justify-center gap-4 sm:flex-row sm:items-center sm:gap-8">
-              <div className="flex items-center justify-between gap-3 sm:justify-center">
-                <p className="text-gray-500 sm:text-xs">Model:</p>
-                <Select.Root
-                  name="model"
-                  disabled={loading}
-                  value={model}
-                  onValueChange={(value) => setModel(value)}
-                >
-                  <Select.Trigger className="group flex w-60 max-w-xs items-center rounded-2xl border-[6px] border-gray-300 bg-white px-4 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500">
-                    <Select.Value />
-                    <Select.Icon className="ml-auto">
-                      <ChevronDownIcon className="size-6 text-gray-300 group-focus-visible:text-gray-500 group-enabled:group-hover:text-gray-500" />
-                    </Select.Icon>
-                  </Select.Trigger>
-                  <Select.Portal>
-                    <Select.Content className="overflow-hidden rounded-md bg-white shadow-lg">
-                      <Select.Viewport className="p-2">
-                        {models.map((model) => (
-                          <Select.Item
-                            key={model.value}
-                            value={model.value}
-                            className="flex cursor-pointer items-center rounded-md px-3 py-2 text-sm data-[highlighted]:bg-gray-100 data-[highlighted]:outline-none"
-                          >
-                            <Select.ItemText asChild>
-                              <span className="inline-flex items-center gap-2 text-gray-500">
-                                <div className="size-2 rounded-full bg-green-500" />
-                                {model.label}
-                              </span>
-                            </Select.ItemText>
-                            <Select.ItemIndicator className="ml-auto">
-                              <CheckIcon className="size-5 text-blue-600" />
-                            </Select.ItemIndicator>
-                          </Select.Item>
-                        ))}
-                      </Select.Viewport>
-                      <Select.ScrollDownButton />
-                      <Select.Arrow />
-                    </Select.Content>
-                  </Select.Portal>
-                </Select.Root>
-              </div>
-
-              <div className="flex h-full items-center justify-between gap-3 sm:justify-center">
-                <label className="text-gray-500 sm:text-xs" htmlFor="shadcn">
-                  shadcn/ui:
-                </label>
-                <Switch.Root
-                  className="group flex w-20 max-w-xs items-center rounded-2xl border-[6px] border-gray-300 bg-white p-1.5 text-sm shadow-inner transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 data-[state=checked]:bg-blue-500"
-                  id="shadcn"
-                  name="shadcn"
-                  checked={shadcn}
-                  onCheckedChange={(value) => setShadcn(value)}
-                >
-                  <Switch.Thumb className="size-7 rounded-lg bg-gray-200 shadow-[0_1px_2px] shadow-gray-400 transition data-[state=checked]:translate-x-7 data-[state=checked]:bg-white data-[state=checked]:shadow-gray-600" />
-                </Switch.Root>
-              </div>
             </div>
           </fieldset>
         </form>
@@ -385,7 +333,6 @@ export default function Home() {
           </motion.div>
         )}
       </main>
-      <Footer />
     </div>
   );
 }
